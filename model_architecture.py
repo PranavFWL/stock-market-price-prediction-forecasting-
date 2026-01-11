@@ -63,7 +63,7 @@ class IntradayLSTM:
         
         # Apply attention
         context = Multiply(name='attention_multiply')([lstm1, attention])
-        context = Lambda(lambda x: K.sum(x, axis=1), name='attention_sum')(context)
+        context = Lambda(lambda x: K.sum(x, axis=1), output_shape=(64,), name='attention_sum')(context)
         
         # Dense layers for final prediction
         dense1 = Dense(
