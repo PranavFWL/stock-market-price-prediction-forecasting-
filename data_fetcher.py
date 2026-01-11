@@ -30,7 +30,8 @@ class DataFetcher:
             
             data = pd.DataFrame(response.json())
             data.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'o': 'open', 'v': 'volume', 't': 'timestamp'}, inplace=True)
-            
+            data = data.drop(columns=['s'], errors='ignore')  # Drop only 's'
+
             data['datetime'] = pd.to_datetime(data['timestamp'], unit='s')
             data.set_index('datetime', inplace=True)
             data.sort_index(inplace=True)
