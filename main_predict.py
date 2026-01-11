@@ -57,8 +57,8 @@ def main():
     print("\n[1/4] Loading model...")
     
     # Specify your model files here
-    model_path = MODEL_DIR / "intraday_lstm_20260111_202706.keras"
-    artifacts_path = MODEL_DIR / "artifacts_20260111_202706.pkl"
+    model_path = MODEL_DIR / "intraday_lstm_20260111_205059.keras"  
+    artifacts_path = MODEL_DIR / "artifacts_20260111_205059.pkl"
     
     if not model_path.exists():
         logger.error(f"Model not found: {model_path}")

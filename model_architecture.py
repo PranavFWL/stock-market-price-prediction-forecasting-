@@ -15,6 +15,7 @@ from keras.callbacks import EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
 from keras import backend as K
 import logging
 from config import MODEL_CONFIG
+from tensorflow.keras.layers import GlobalAveragePooling1D
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +64,7 @@ class IntradayLSTM:
         
         # Apply attention
         context = Multiply(name='attention_multiply')([lstm1, attention])
-        context = Lambda(lambda x: tf.reduce_sum(x, axis=1), output_shape=(64,), name='attention_sum')(context)
+        context = GlobalAveragePooling1D(name='attention_sum')(context)
         
         # Dense layers for final prediction
         dense1 = Dense(
