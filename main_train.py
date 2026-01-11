@@ -20,6 +20,7 @@ from config import *
 from data_fetcher import DataFetcher
 from feature_engineering import FeatureEngineer
 from model_architecture import IntradayLSTM
+import tensorflow as tf
 
 # Setup logging
 logging.basicConfig(
@@ -58,7 +59,7 @@ def prepare_sequences(df, feature_cols, lookback, horizon):
     X_sequences = []
     y_sequences = []
     
-    for i in range(len(X_data) - lookback):
+    for i in range(len(X_data) - lookback - horizon):
         X_sequences.append(X_data[i:i + lookback])
         y_sequences.append(y_data[i + lookback])
     

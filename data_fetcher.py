@@ -1,7 +1,3 @@
-"""
-Data Fetcher for Nifty 50 Intraday Data
-Handles API calls and data validation
-"""
 
 import pandas as pd
 import numpy as np
@@ -20,70 +16,38 @@ class DataFetcher:
         self.resolution = DATA_CONFIG['resolution']
         
     def fetch_live_data(self, days_back=30):
-        """
-        Fetch live data from MoneyControl API
-        
-        Args:
-            days_back: Number of days of historical data to fetch
-            
-        Returns:
-            pd.DataFrame: OHLCV data with datetime index
-        """
+        """Fetch live data from MoneyControl API"""
         try:
-            # Calculate time range
             to_timestamp = int(datetime.now().timestamp())
             from_timestamp = int((datetime.now() - timedelta(days=days_back)).timestamp())
             
-            # Build URL
-            params = {
-                'symbol': self.symbol,
-                'resolution': self.resolution,
-                'from': from_timestamp,
-                'to': to_timestamp,
-                'countback': 20000,
-                'currencyCode': 'INR'
-            }
-            
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            }
+            url = f"{self.api_url}?symbol={self.symbol}&resolution={self.resolution}&from={from_timestamp}&to={to_timestamp}&countback=20000&currencyCode=INR"
+            headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
             
             logger.info(f"Fetching data from {days_back} days back...")
-            response = requests.get(self.api_url, params=params, headers=headers, timeout=30)
+            response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
             
-            data = response.json()
+            data = pd.DataFrame(response.json())
+            data.rename(columns={'c': 'close', 'h': 'high', 'l': 'low', 'o': 'open', 'v': 'volume', 't': 'timestamp'}, inplace=True)
             
-            # Convert to DataFrame
-            df = pd.DataFrame(data)
+            data['datetime'] = pd.to_datetime(data['timestamp'], unit='s')
+            data.set_index('datetime', inplace=True)
+            data.sort_index(inplace=True)
+
+            # ADD DEBUG HERE
+            print(f"Data shape before validation: {data.shape}")
+            print(f"Columns: {data.columns.tolist()}")
+            print(f"First 3 rows:\n{data.head(3)}")
+            print(f"Volume stats: min={data['volume'].min()}, max={data['volume'].max()}, mean={data['volume'].mean()}")
+
             
-            # Rename columns
-            df.rename(columns={
-                'c': 'close',
-                'h': 'high',
-                'l': 'low',
-                'o': 'open',
-                'v': 'volume',
-                't': 'timestamp'
-            }, inplace=True)
-            
-            # Convert timestamp to datetime
-            df['datetime'] = pd.to_datetime(df['timestamp'], unit='s')
-            df.set_index('datetime', inplace=True)
-            
-            # Sort by datetime
-            df.sort_index(inplace=True)
-            
-            # Validate data
-            df = self._validate_data(df)
-            
+            df = self._validate_data(data)
             logger.info(f"Successfully fetched {len(df)} candles")
-            logger.info(f"Date range: {df.index[0]} to {df.index[-1]}")
             
             return df
-            
         except Exception as e:
-            logger.error(f"Error fetching data: {e}")
+            logger.error(f"Error: {e}")
             raise
     
     def _validate_data(self, df):
@@ -97,7 +61,7 @@ class DataFetcher:
             pd.DataFrame: Cleaned dataframe
         """
         # Check for required columns
-        required_cols = ['open', 'high', 'low', 'close', 'volume']
+        required_cols = ['open', 'high', 'low', 'close']
         missing_cols = [col for col in required_cols if col not in df.columns]
         if missing_cols:
             raise ValueError(f"Missing required columns: {missing_cols}")
@@ -124,11 +88,6 @@ class DataFetcher:
             logger.warning(f"Found {invalid_ohlc.sum()} invalid OHLC relationships")
             df = df[~invalid_ohlc]
         
-        # Remove zero volume candles
-        zero_volume = df['volume'] == 0
-        if zero_volume.any():
-            logger.warning(f"Removing {zero_volume.sum()} zero-volume candles")
-            df = df[~zero_volume]
         
         # Check for outliers (price changes > 10%)
         returns = df['close'].pct_change()
@@ -204,8 +163,7 @@ class DataFetcher:
             'open': 'first',
             'high': 'max',
             'low': 'min',
-            'close': 'last',
-            'volume': 'sum'
+            'close': 'last'
         }).dropna()
         
         logger.info(f"Resampled to {timeframe}: {len(resampled)} candles")
