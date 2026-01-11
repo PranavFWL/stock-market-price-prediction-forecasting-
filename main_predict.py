@@ -57,8 +57,8 @@ def main():
     print("\n[1/4] Loading model...")
     
     # Specify your model files here
-    model_path = MODEL_DIR / "intraday_lstm_XXXXXXXX_XXXXXX.keras"  # UPDATE THIS
-    artifacts_path = MODEL_DIR / "artifacts_XXXXXXXX_XXXXXX.pkl"   # UPDATE THIS
+    model_path = MODEL_DIR / "intraday_lstm_20260111_202706.keras"
+    artifacts_path = MODEL_DIR / "artifacts_20260111_202706.pkl"
     
     if not model_path.exists():
         logger.error(f"Model not found: {model_path}")
@@ -67,7 +67,7 @@ def main():
             print(f"  - {f.name}")
         sys.exit(1)
     
-    model = load_model(model_path)
+    model = load_model(model_path, safe_mode=False)
     artifacts = load_artifacts(artifacts_path)
     
     scaler_X = artifacts['scaler_X']
